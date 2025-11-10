@@ -26,6 +26,8 @@ spec:
           value: "false"
         - name: PGSSLMODE
           value: "disable"
+        - name: FILE_STORAGE_UPLOAD_MAX_SIZE
+          value: "262144000"
         # --- SECRETS ---
         - name: SECRET_KEY
           valueFrom: { secretKeyRef: { name: outline-secrets, key: OUTLINE_SECRET_KEY } }
