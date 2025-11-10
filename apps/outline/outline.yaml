@@ -28,6 +28,20 @@ spec:
           value: "disable"
         - name: FILE_STORAGE_UPLOAD_MAX_SIZE
           value: "262144000"
+
+        # Storage config
+        - name: FILE_STORAGE
+          value: "local"
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: AWS_ACCESS_KEY_ID
+          value: "dummy-key"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "dummy-secret"
+        - name: AWS_S3_FORCE_PATH_STYLE
+          value: "true"
+
+
         # --- SECRETS ---
         - name: SECRET_KEY
           valueFrom: { secretKeyRef: { name: outline-secrets, key: OUTLINE_SECRET_KEY } }
