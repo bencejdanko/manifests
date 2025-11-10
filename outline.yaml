@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outline
+  namespace: outline
+spec:
+  selector:
+    matchLabels:
+      app: outline
+  template:
+    metadata:
+      labels:
+        app: outline
+    spec:
+      containers:
+      - name: outline
+        image: docker.getoutline.com/outlinewiki/outline:latest
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: URL
+          value: https://docs.pasuko.com
+        - name: PORT
+          value: "3000"
+        - name: FORCE_HTTPS
+          value: "false"
+        # --- SECRETS ---
+        - name: SECRET_KEY
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: OUTLINE_SECRET_KEY } }
+        - name: UTILS_SECRET
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: OUTLINE_UTILS_SECRET } }
+        - name: DATABASE_URL
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: DATABASE_URL } }
+        - name: REDIS_URL
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: REDIS_URL } }
+        - name: GOOGLE_CLIENT_ID
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: GOOGLE_CLIENT_ID } }
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom: { secretKeyRef: { name: outline-secrets, key: GOOGLE_CLIENT_SECRET } }
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: outline-data
+          mountPath: /var/lib/outline/data
+      volumes:
+      - name: outline-data
+        persistentVolumeClaim:
+          claimName: outline-data-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: outline-data-pvc
+  namespace: outline
+spec:
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: outline
+  namespace: outline
+spec:
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: outline
