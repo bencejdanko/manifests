@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: outline-ingress
+  namespace: outline
+spec:
+  rules:
+  - host: docs.pasuko.com  # CHANGE THIS to your real domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: outline
+            port:
+              number: 80
