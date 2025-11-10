@@ -5,7 +5,7 @@ metadata:
   namespace: outline
 spec:
   rules:
-  - host: docs.pasuko.com  # CHANGE THIS to your real domain
+  - host: docs.pasuko.com
     http:
       paths:
       - path: /
