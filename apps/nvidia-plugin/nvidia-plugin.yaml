@@ -1,21 +1,19 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: nvidia-device-plugin
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://nvidia.github.io/k8s-device-plugin
-    chart: nvidia-device-plugin
-    targetRevision: "0.14.3" # Use a specific version for stability
-  destination:
-    server: https://kubernetes.default.svc
-    # This should be installed in its own namespace
-    namespace: nvidia-device-plugin
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+project: default
+source:
+  repoURL: https://nvidia.github.io/k8s-device-plugin
+  targetRevision: 0.14.3
+  helm:
+    values: |
+      nodeSelector:
+        nvidia.com/gpu: "true"
+      runtimeClassName: "nvidia"
+  chart: nvidia-device-plugin
+destination:
+  server: https://kubernetes.default.svc
+  namespace: nvidia-device-plugin
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true
