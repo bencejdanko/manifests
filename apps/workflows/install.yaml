@@ -3072,10 +3072,12 @@ metadata:
   name: argo-server
   namespace: argo
 spec:
+  type: NodePort
   ports:
   - name: web
     port: 2746
     targetPort: 2746
+    nodePort: 32746
   selector:
     app: argo-server
 ---
@@ -3102,6 +3104,7 @@ spec:
       containers:
       - args:
         - server
+        - --auth-mode=client
         env: []
         image: quay.io/argoproj/argocli:v3.7.3
         name: argo-server
@@ -3185,3 +3188,22 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: argo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-ui-admin
+  namespace: argo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argo-ui-admin-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: argo-ui-admin
+    namespace: argo
