@@ -2,14 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: argo-server
-  namespace: argo
 spec:
   template:
     spec:
       containers:
         - name: argo-server
           args:
-            # keep whatever args are there already, just ensure this is present:
             - --auth-mode=client
-            # For simplest local use you can also make it plain HTTP:
+            # optional, to avoid HTTPS while testing:
             # - --secure=false

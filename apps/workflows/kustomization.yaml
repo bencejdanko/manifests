@@ -3,13 +3,10 @@ kind: Kustomization
 namespace: argo
 
 resources:
-  - install.yaml          # the upstream release manifest you used
+  - install.yaml
+  - sa-admin.yaml
+  - crb-admin.yaml
 
 patchesStrategicMerge:
-  - server-patch.yaml     # turn on client auth
-  - sa-admin.yaml         # SA you’ll use to log in
-  - crb-admin.yaml        # give that SA admin (easy for lab)
-
-# Uncomment if you want a NodePort on a fixed port (e.g., 32746)
-patchesStrategicMerge:
-  - svc-nodeport-patch.yaml
+  - server-patch.yaml
+  # - svc-nodeport-patch.yaml   # uncomment if you want NodePort
