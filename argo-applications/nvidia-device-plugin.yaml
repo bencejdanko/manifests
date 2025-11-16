@@ -6,6 +6,7 @@ source:
     values: |
       nodeSelector:
         nvidia.com/gpu: "true"
+
       runtimeClassName: "nvidia"
   chart: nvidia-device-plugin
 destination:
