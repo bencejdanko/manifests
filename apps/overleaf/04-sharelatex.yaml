@@ -16,7 +16,7 @@ metadata:
   name: sharelatex-data
   namespace: overleaf
 spec:
-  storageClassName: local-path
+  storageClassName: local-path 
   accessModes:
     - ReadWriteOnce
   resources:
@@ -40,6 +40,7 @@ spec:
       labels:
         app: sharelatex
     spec:
+      enableServiceLinks: false
       containers:
         - name: sharelatex
           image: sharelatex/sharelatex
