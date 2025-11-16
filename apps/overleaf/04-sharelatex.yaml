@@ -16,7 +16,7 @@ metadata:
   name: sharelatex-data
   namespace: overleaf
 spec:
-  storageClassName: local-path 
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:
@@ -31,7 +31,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate # Required because the PVC is RWO
+    type: Recreate
   selector:
     matchLabels:
       app: sharelatex
@@ -49,15 +49,22 @@ spec:
           envFrom:
             - configMapRef:
                 name: sharelatex-config
+          resources:
+            # Overleaf is memory hungry. We request 2Gi to ensure it has room.
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "4Gi"
           volumeMounts:
             - name: data
               mountPath: /var/lib/overleaf
-          livenessProbe:
+          readinessProbe:
             httpGet:
               path: /login
               port: 80
             initialDelaySeconds: 60
-            periodSeconds: 20
+            periodSeconds: 10
       volumes:
         - name: data
           persistentVolumeClaim:
