@@ -5,20 +5,24 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |
-    # This enables the /metrics endpoint inside Traefik
     metrics:
       prometheus:
         enabled: true
-    
+
     ports:
       metrics:
         port: 9100
         expose:
-          default: false
+          default: false 
         protocol: TCP
-    
+
     serviceMonitor:
       create: true
       namespace: monitoring
       additionalLabels:
         release: kube-prometheus-stack
+
+    logs:
+      access:
+        enabled: true
+        format: json
