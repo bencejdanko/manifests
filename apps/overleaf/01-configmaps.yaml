@@ -9,7 +9,7 @@ data:
     rs.initiate({
       _id: "overleaf",
       members: [
-        { _id: 0, host: "mongo:27017" }
+        { _id: 0, host: "mongo.overleaf.svc.cluster.local:27017" }
       ]
     });
 ---
@@ -20,12 +20,10 @@ metadata:
   namespace: overleaf
 data:
   OVERLEAF_APP_NAME: "Overleaf Community Edition"
-  OVERLEAF_MONGO_URL: "mongodb://mongo.overleaf.svc.cluster.local:27017/sharelatex"
+  OVERLEAF_MONGO_URL: "mongodb://mongo.overleaf.svc.cluster.local:27017/sharelatex?replicaSet=overleaf"
   OVERLEAF_REDIS_HOST: "redis.overleaf.svc.cluster.local"
   REDIS_HOST: "redis.overleaf.svc.cluster.local"
   ENABLED_LINKED_FILE_TYPES: "project_file,project_output_file"
   ENABLE_CONVERSIONS: "true"
   EMAIL_CONFIRMATION_DISABLED: "true"
-  # Sandboxing disabled for K8s stability. 
-  # Overleaf will run latex commands inside the pod user context.
   SANDBOXED_COMPILES: "false"
