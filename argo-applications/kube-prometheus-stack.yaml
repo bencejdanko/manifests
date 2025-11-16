@@ -1,0 +1,75 @@
+project: default
+source:
+  repoURL: https://prometheus-community.github.io/helm-charts
+  targetRevision: 79.5.0
+  helm:
+    values: |
+      # --- Prometheus Configuration ---
+      prometheus:
+        prometheusSpec:
+          retention: 15d
+          retentionSize: "20GiB" 
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          serviceMonitorNamespaceSelector: {}
+
+      # --- Grafana Configuration ---
+      grafana:
+        persistence:
+          enabled: true
+          size: 10Gi
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+            
+        initChownData:
+          enabled: false
+        securityContext:
+          fsGroup: 472
+          runAsGroup: 472
+          runAsUser: 472
+
+        ingress:
+            enabled: true
+            ingressClassName: traefik 
+            hosts:
+              - grafana.pasuko.com 
+            path: /
+            pathType: Prefix
+            annotations:
+              # Tells Traefik to use the 'web' entrypoint (port 80)
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+
+      # --- Other Components (KSM, Node Exporter) ---
+      kube-state-metrics:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+
+      prometheus-node-exporter:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+                
+  chart: kube-prometheus-stack
+destination:
+  server: https://kubernetes.default.svc
+  namespace: monitoring
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true

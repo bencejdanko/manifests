@@ -1,0 +1,24 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |
+    # This enables the /metrics endpoint inside Traefik
+    metrics:
+      prometheus:
+        enabled: true
+    
+    ports:
+      metrics:
+        port: 9100
+        expose:
+          default: false
+        protocol: TCP
+    
+    serviceMonitor:
+      create: true
+      namespace: monitoring
+      additionalLabels:
+        release: kube-prometheus-stack
