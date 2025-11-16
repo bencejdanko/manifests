@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sharelatex-ingress
+  namespace: overleaf
+  annotations:
+    # Assuming Nginx Ingress controller
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  rules:
+    # CHANGE THIS TO YOUR DOMAIN
+    - host: overleaf.pasuko.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sharelatex
+                port:
+                  number: 80
