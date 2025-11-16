@@ -1,0 +1,37 @@
+# Save as: redis.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: overleaf-redis
+  namespace: argocd
+spec:
+  project: homelab
+  source:
+    repoURL: 'https://charts.bitnami.com/bitnami'
+    chart: 'redis'
+    targetRevision: '19.0.2'
+    helm:
+      values: |
+        architecture: "standalone"
+
+        # Renames the service to 'redis-master.overleaf.svc.cluster.local'
+        # to match what Overleaf is looking for.
+        fullnameOverride: "redis-master"
+
+        persistence:
+          enabled: true
+          storageClass: "local-path"
+          accessModes:
+            - "ReadWriteOnce"
+          size: "2Gi"
+          
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: 'overleaf' # Deploy into the same namespace
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

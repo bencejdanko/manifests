@@ -1,0 +1,39 @@
+# Save as: mongodb.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: overleaf-mongodb
+  namespace: argocd
+spec:
+  project: homelab
+  source:
+    repoURL: 'https://charts.bitnami.com/bitnami'
+    chart: 'mongodb'
+    targetRevision: '15.6.3'
+    helm:
+      values: |
+        # This deploys a simple single-pod instance.
+        architecture: "standalone"
+        
+        # This is the important part. It renames the service
+        # to match what Overleaf is looking for.
+        # It creates a service named 'mongodb-master.overleaf.svc.cluster.local'
+        fullnameOverride: "mongodb-master"
+
+        persistence:
+          enabled: true
+          storageClass: "local-path"
+          accessModes:
+            - "ReadWriteOnce"
+          size: "8Gi"
+          
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: 'overleaf' # Deploy into the same namespace
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
