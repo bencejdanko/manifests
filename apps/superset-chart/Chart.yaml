@@ -8,6 +8,6 @@ version: 1.0.0
 dependencies:
   - name: superset
     # This is the official chart from the docs
-    repository: oci://registry.apache.org/superset
+    repository: https://apache.github.io/superset
     # This is the chart version you found
-    version: 0.15.1
+    version: 0.15.0

@@ -1,54 +1,59 @@
 # apps/superset-chart/values.yaml
 
 # --- 1. Security Configuration ---
+superset:
 
-extraSecretEnv:
-  SUPERSET_SECRET_KEY:
-    secretName: superset-secrets
-    secretKey: SUPERSET_SECRET_KEY
+  extraSecretEnv:
+    SUPERSET_SECRET_KEY:
+      secretName: superset-secrets
+      secretKey: SUPERSET_SECRET_KEY
 
-configOverrides:
-  secret: |
-    import os
-    SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY")
+  configOverrides:
+    secret: |
+      import os
+      SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY")
 
-init:
-  adminUser:
-    existingSecret: "superset-secrets"
-    existingSecretUsernameKey: "SUPERSET_ADMIN_USERNAME"
-    existingSecretPasswordKey: "SUPERSET_ADMIN_PASSWORD"
-    existingSecretFirstnameKey: "SUPERSET_ADMIN_FIRSTNAME"
-    existingSecretLastnameKey: "SUPERSET_ADMIN_LASTNAME"
-    existingSecretEmailKey: "SUPERSET_ADMIN_EMAIL"
-  
-  loadExamples: true
+  init:
+    adminUser:
+      existingSecret: "superset-secrets"
+      existingSecretUsernameKey: "SUPERSET_ADMIN_USERNAME"
+      existingSecretPasswordKey: "SUPERSET_ADMIN_PASSWORD"
+      existingSecretFirstnameKey: "SUPERSET_ADMIN_FIRSTNAME"
+      existingSecretLastnameKey: "SUPERSET_ADMIN_LASTNAME"
+      existingSecretEmailKey: "SUPERSET_ADMIN_EMAIL"
+    
+    loadExamples: true
 
-postgresql:
-  enabled: true
-  
-  auth:
-    existingSecret: "superset-secrets"
-    secretKeys:
-      passwordKey: "SUPERSET_POSTGRES_PASSWORD"
+  postgresql:
+    enabled: true
+    image: 
+      repository: registry.vmware.com/bitnami/postgresql
+    
+    auth:
+      existingSecret: "superset-secrets"
+      secretKeys:
+        passwordKey: "SUPERSET_POSTGRES_PASSWORD"
 
-redis:
-  enabled: true
+  redis:
+    enabled: true
+    image:
+      repository: registry.vmware.com/bitnami/redis
 
-bootstrapScript: |
-  #!/bin/bash
-  pip install .[postgres]
-  
-ingress:
-  enabled: true
-  ingressClassName: "traefik"
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-  hosts:
-    - host: "superset.pasuko.com"
-      paths:
-        - path: /
-          pathType: Prefix
+  bootstrapScript: |
+    #!/bin/bash
+    pip install .[postgres]
+    
+  ingress:
+    enabled: true
+    ingressClassName: "traefik"
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+    hosts:
+      - host: "superset.pasuko.com"
+        paths:
+          - path: /
+            pathType: Prefix
 
-# --- 5. Opt-out of Telemetry ---
-image:
-  repository: "apache/superset"
+  # --- 5. Opt-out of Telemetry ---
+  image:
+    repository: "apache/superset"
