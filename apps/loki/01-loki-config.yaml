@@ -8,10 +8,6 @@ data:
     server:
       http_listen_port: 3100
 
-    distributor:
-      otlp:
-        enabled: true
-
     common:
       path_prefix: /var/loki
       storage:
