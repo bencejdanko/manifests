@@ -153,12 +153,21 @@ kind: Job
 metadata:
   name: superset-init
   namespace: default
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
 spec:
   template:
     spec:
       restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:14.11
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
+              until pg_isready -h superset-postgresql -p 5432; do
+                echo "Waiting for Postgres...";
+                sleep 2;
+              done
       containers:
         - name: init
           image: "apache/superset:5.0.0"
@@ -170,7 +179,6 @@ spec:
             - |
               set -eu
               pip install --no-cache-dir "psycopg2-binary>=2.9"
-              until nc -z superset-postgresql 5432; do echo "Waiting for Postgres..."; sleep 2; done
               export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
               superset db upgrade
               superset fab create-admin \
@@ -180,6 +188,7 @@ spec:
                 --email "${SUPERSET_ADMIN_EMAIL}" \
                 --password "${SUPERSET_ADMIN_PASSWORD}" || true
               superset init
+
 ---
 apiVersion: v1
 kind: Service
