@@ -8,18 +8,21 @@ data:
     receivers:
       otlp:
         protocols:
-          http: {}   # listens on 0.0.0.0:4318
+          http: {}
 
     processors:
+      # This will try to parse the body as JSON.
+      # If it fails, it will be ignored and the body remains a string.
+      json_parser:
+        error_mode: ignore
+
+      # This will now only run its statements on logs
+      # where the body was successfully parsed into a map.
       transform/traefik:
         error_mode: ignore
         log_statements:
           - context: log
             statements:
-              # If the body is a JSON string, parse it into a map
-              - set(body, ParseJSON(body)) where IsString(body) and StartsWith(body, "{") and EndsWith(body, "}")              
-              
-              # Promote selected fields to attributes (use bracket syntax; cast numbers)
               - set(attributes["http.method"], body["RequestMethod"]) where IsMap(body)
               - set(attributes["http.target"], body["RequestPath"]) where IsMap(body)
               - set(attributes["http.status_code"], Int(body["DownstreamStatus"])) where IsMap(body)
@@ -34,15 +37,20 @@ data:
         timeout: 5s
 
     exporters:
-      # Send to Loki's native OTLP endpoint (no custom loki exporter block)
       otlphttp:
         endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
         headers:
+          # Fixes the 401 Unauthenticated error
           X-Scope-OrgID: fake-org
+
+      # For debugging: prints processed logs to the collector's stdout
+      logging: {}
 
     service:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [transform/traefik, batch]
+          # The order is important: parse first, then transform
+          processors: [json_parser, transform/traefik, batch]
+          # Send to Loki
           exporters: [otlphttp]
