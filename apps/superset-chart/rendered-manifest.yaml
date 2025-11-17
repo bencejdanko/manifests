@@ -721,9 +721,9 @@ spec:
             - name: POSTGRES_USER
               value: "superset"
             - name: POSTGRES_PASSWORD
-              value: askjdlasjdpoasd93849234ljksdflsdf
+              value: superset
             - name: POSTGRES_POSTGRES_PASSWORD
-              value: askjdlasjdpoasd93849234ljksdflsdf
+              value: superset
             - name: POSTGRES_DATABASE
               value: "superset"
             # Replication
