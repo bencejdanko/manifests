@@ -34,10 +34,9 @@ data:
         timeout: 5s
 
     exporters:
-      otlphttp:
-        endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
+      loki:
+        endpoint: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
         headers:
-          # Fixes the 401 Unauthenticated error
           X-Scope-OrgID: fake-org
 
       # The debug exporter will now print logs to the
