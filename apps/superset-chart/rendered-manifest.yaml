@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: superset-local-postgresql
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/instance: superset-local
     app.kubernetes.io/managed-by: Helm
@@ -19,7 +19,7 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   name: superset-local-redis
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: superset-local-env
-  namespace: default
+  namespace: superset
   labels:
     app: superset-local
     chart: superset-0.15.0
@@ -58,7 +58,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: superset-local-config
-  namespace: default
+  namespace: superset
   labels:
     app: superset-local
     chart: superset-0.15.0
@@ -148,7 +148,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: superset-local-redis-configuration
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -181,7 +181,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: superset-local-redis-health
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -289,7 +289,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: superset-local-redis-scripts
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -318,7 +318,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-local-postgresql-hl
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/instance: superset-local
     app.kubernetes.io/managed-by: Helm
@@ -353,7 +353,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-local-postgresql
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/instance: superset-local
     app.kubernetes.io/managed-by: Helm
@@ -379,7 +379,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-local-redis-headless
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -404,7 +404,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-local-redis-master
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -430,7 +430,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-local
-  namespace: default
+  namespace: superset
   labels:
     app: superset
     chart: superset-0.15.0
@@ -452,7 +452,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-local-worker
-  namespace: default
+  namespace: superset
   labels:
     app: superset-worker
     chart: superset-0.15.0
@@ -531,7 +531,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-local
-  namespace: default
+  namespace: superset
   labels:
     app: superset
     chart: superset-0.15.0
@@ -631,7 +631,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: superset-local-postgresql
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/instance: superset-local
     app.kubernetes.io/managed-by: Helm
@@ -806,7 +806,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: superset-local-redis-master
-  namespace: "default"
+  namespace: "superset"
   labels:
     app.kubernetes.io/name: redis
     helm.sh/chart: redis-17.9.4
@@ -947,7 +947,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: superset-local
-  namespace: default
+  namespace: superset
   labels:
     app: superset
     chart: superset-0.15.0
@@ -974,7 +974,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: superset-local-init-db
-  namespace: default
+  namespace: superset
   labels:
     app: superset
     chart: superset-0.15.0
