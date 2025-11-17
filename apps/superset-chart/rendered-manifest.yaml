@@ -141,6 +141,13 @@ stringData:
     fi
   superset_bootstrap.sh: |
     #!/bin/bash
+
+    # Install necessary system libraries for psycopg2 build
+    apt update && apt install -y gcc libpq-dev python3-dev pkg-config
+    
+    # Install the PostgreSQL driver using the global 'uv' tool
+    uv pip install psycopg2-binary
+
     pip install .[postgres]
 ---
 # Source: superset-local/charts/superset/charts/redis/templates/configmap.yaml
@@ -495,7 +502,7 @@ spec:
         name: wait-for-postgres-redis
       containers:
         - name: superset
-          image: "apache/superset:5.0.0-debian-python3.10"
+          image: "apache/superset:5.0.0"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","-c",". /app/pythonpath/superset_bootstrap.sh; celery --app=superset.tasks.celery_app:app worker"]
           env:
@@ -575,7 +582,7 @@ spec:
         name: wait-for-postgres
       containers:
         - name: superset
-          image: "apache/superset:5.0.0-debian-python3.10"
+          image: "apache/superset:5.0.0"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","-c",". /app/pythonpath/superset_bootstrap.sh; /usr/bin/run-server.sh"]
           env:
@@ -997,7 +1004,7 @@ spec:
         name: wait-for-postgres
       containers:
       - name: superset-init-db
-        image: "apache/superset:5.0.0-debian-python3.10"
+        image: "apache/superset:5.0.0"
         envFrom:
           - secretRef:
               name: superset-local-env
