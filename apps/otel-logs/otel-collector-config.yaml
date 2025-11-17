@@ -6,22 +6,18 @@ metadata:
 data:
   collector.yaml: |
     receivers:
-      # Receive logs directly from Traefik (OTLP over HTTP)
       otlp:
         protocols:
           http:  # listens on :4318 by default
 
     processors:
-      # Parse Traefik's JSON body (if the body is a JSON string) and copy key fields to attributes
+      # optional: parse Traefik JSON body and promote a few fields to attributes
       transform/traefik:
         error_mode: ignore
         log_statements:
           - context: log
             statements:
-              # If body is a JSON string, parse it into a map
               - set(body, ParseJSON(body)) where IsString(body)
-
-              # Map key fields to attributes (labels in Loki)
               - set(attributes["http.method"], body.RequestMethod) where IsMap(body)
               - set(attributes["http.target"], body.RequestPath) where IsMap(body)
               - set(attributes["http.status_code"], ToInt(body.DownstreamStatus)) where IsMap(body)
@@ -36,26 +32,13 @@ data:
         timeout: 5s
 
     exporters:
-      # Push to your in-cluster Loki
-      loki:
-        endpoint: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
-        # Which attributes become Loki labels (keep cardinality sane)
-        labels:
-          attributes:
-            - http.method
-            - http.status_code
-            - traefik.entrypoint
-            - traefik.router
-            - traefik.service
-            - k8s.namespace.name
-            - k8s.pod.name
-        # Keep resource attributes too (K8s auto-detected by Traefik)
-        # default_labels_enabled can be toggled if you want fewer labels:
-        # default_labels_enabled: false
+      # >>> send to Loki's native OTLP endpoint (no custom labels block here)
+      otlphttp:
+        endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
 
     service:
       pipelines:
         logs:
           receivers: [otlp]
           processors: [transform/traefik, batch]
-          exporters: [loki]
+          exporters: [otlphttp]
