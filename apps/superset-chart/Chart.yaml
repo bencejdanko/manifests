@@ -1,0 +1,13 @@
+# apps/superset-chart/Chart.yaml
+apiVersion: v2
+name: superset-local
+description: A local wrapper chart for deploying Apache Superset
+type: application
+version: 1.0.0
+
+dependencies:
+  - name: superset
+    # This is the official chart from the docs
+    repository: https://apache.github.io/superset
+    # This is the chart version you found
+    version: 0.15.0
