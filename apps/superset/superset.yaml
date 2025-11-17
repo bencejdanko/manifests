@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: default
+  name: superset
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: superset-env
-  namespace: default
+  namespace: superset
 data:
   SUPERSET_WEBSERVER_TIMEOUT: "60"
   SUPERSET_LOAD_EXAMPLES: "no"
@@ -21,7 +21,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-redis
-  namespace: default
+  namespace: superset
 spec:
   ports:
     - name: redis
@@ -34,7 +34,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-redis
-  namespace: default
+  namespace: superset
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: superset-postgresql
-  namespace: default
+  namespace: superset
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
@@ -83,7 +83,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset-postgresql
-  namespace: default
+  namespace: superset
 spec:
   ports:
     - name: pg
@@ -96,7 +96,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-postgresql
-  namespace: default
+  namespace: superset
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -152,7 +152,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: superset-init
-  namespace: default
+  namespace: superset
 spec:
   template:
     spec:
@@ -194,7 +194,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: superset
-  namespace: default
+  namespace: superset
 spec:
   type: ClusterIP
   ports:
@@ -208,7 +208,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset
-  namespace: default
+  namespace: superset
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
@@ -261,7 +261,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-worker
-  namespace: default
+  namespace: superset
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
@@ -308,7 +308,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset-beat
-  namespace: default
+  namespace: superset
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
@@ -355,7 +355,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: superset
-  namespace: default
+  namespace: superset
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
