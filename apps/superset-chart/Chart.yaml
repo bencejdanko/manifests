@@ -10,4 +10,4 @@ dependencies:
     # This is the official chart from the docs
     repository: https://apache.github.io/superset
     # This is the chart version you found
-    version: 0.15.0
+    version: 0.15.1

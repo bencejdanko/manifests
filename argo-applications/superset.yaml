@@ -8,8 +8,13 @@ spec:
   project: default
   source:
     repoURL: https://github.com/bencejdanko/manifests.git
-    path: apps/superset
+    path: apps/superset-chart
     targetRevision: main
+
+    helm:
+      valueFiles:
+        - values.yaml
+
   destination:
     server: https://kubernetes.default.svc
     namespace: superset
