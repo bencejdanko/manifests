@@ -9,187 +9,26 @@ metadata:
   name: superset-env
   namespace: superset
 data:
-  SUPERSET_WEBSERVER_TIMEOUT: "60"
+  # Persisted home under our PVC
+  SUPERSET_HOME: "/app/superset_home"
+  # SQLite DB file on the mounted volume (four slashes after sqlite:)
+  SQLALCHEMY_DATABASE_URI: "sqlite:////app/superset_home/superset.db"
   SUPERSET_LOAD_EXAMPLES: "no"
-  MAPBOX_API_KEY: ""
-  REDIS_HOST: "superset-redis"
-  REDIS_PORT: "6379"
-  REDIS_DB: "1"
-  REDIS_CELERY_DB: "0"
+  SUPERSET_WEBSERVER_TIMEOUT: "60"
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: superset-redis
-  namespace: superset
-spec:
-  ports:
-    - name: redis
-      port: 6379
-      targetPort: 6379
-  selector:
-    app: superset-redis
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: superset-redis
-  namespace: superset
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: superset-redis
-  template:
-    metadata:
-      labels:
-        app: superset-redis
-    spec:
-      containers:
-        - name: redis
-          image: "redis:7.2"
-          ports:
-            - containerPort: 6379
-          readinessProbe:
-            tcpSocket: { port: 6379 }
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            tcpSocket: { port: 6379 }
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "500m"
-              memory: "256Mi"
----
+# Storage for the SQLite file & Superset home
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: superset-postgresql
+  name: superset-home
   namespace: superset
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
-      storage: 8Gi
+      storage: 2Gi
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: superset-postgresql
-  namespace: superset
-spec:
-  ports:
-    - name: pg
-      port: 5432
-      targetPort: 5432
-  selector:
-    app: superset-postgresql
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: superset-postgresql
-  namespace: superset
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: superset-postgresql
-  template:
-    metadata:
-      labels:
-        app: superset-postgresql
-    spec:
-      containers:
-        - name: postgres
-          image: "postgres:14.11"
-          env:
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef: { name: superset-secrets, key: POSTGRES_DB }
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef: { name: superset-secrets, key: POSTGRES_USER }
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef: { name: superset-secrets, key: POSTGRES_PASSWORD }
-          ports:
-            - containerPort: 5432
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-          readinessProbe:
-            exec:
-              command: ["pg_isready","-U","postgres"]
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          livenessProbe:
-            tcpSocket: { port: 5432 }
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "1000m"
-              memory: "1Gi"
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: superset-postgresql
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: superset-init
-  namespace: superset
-spec:
-  template:
-    spec:
-      restartPolicy: OnFailure
-      initContainers:
-        - name: wait-for-postgres
-          image: postgres:14.11
-          command: ["/bin/sh","-c"]
-          args:
-            - |
-              set -eu
-              until pg_isready -h superset-postgresql -p 5432; do
-                echo "Waiting for Postgres...";
-                sleep 2;
-              done
-      containers:
-        - name: init
-          image: "apache/superset:5.0.0"
-          envFrom:
-            - configMapRef: { name: superset-env }
-            - secretRef: { name: superset-secrets }
-          command: ["/bin/sh","-c"]
-          args:
-            - |
-              set -eu
-              pip install --no-cache-dir "psycopg2-binary>=2.9"
-              export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
-              superset db upgrade
-              superset fab create-admin \
-                --username "${SUPERSET_ADMIN_USERNAME}" \
-                --firstname "${SUPERSET_ADMIN_FIRSTNAME}" \
-                --lastname "${SUPERSET_ADMIN_LASTNAME}" \
-                --email "${SUPERSET_ADMIN_EMAIL}" \
-                --password "${SUPERSET_ADMIN_PASSWORD}" || true
-              superset init
-
----
+# Internal Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -204,15 +43,14 @@ spec:
   selector:
     app: superset
 ---
+# Superset (single replica; no Celery/Redis/Postgres)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: superset
   namespace: superset
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
-  replicas: 2
+  replicas: 1   # IMPORTANT: keep 1 with SQLite
   selector:
     matchLabels:
       app: superset
@@ -221,33 +59,60 @@ spec:
       labels:
         app: superset
     spec:
-      containers:
-        - name: web
-          image: "apache/superset:5.0.0"
+      securityContext:
+        fsGroup: 65534        # ensure volume is writable (nobody)
+        fsGroupChangePolicy: "OnRootMismatch"
+      volumes:
+        - name: superset-home
+          persistentVolumeClaim:
+            claimName: superset-home
+      initContainers:
+        - name: init-db
+          image: apache/superset:5.0.0
           envFrom:
             - configMapRef: { name: superset-env }
-            - secretRef: { name: superset-secrets }
-          env:
-            - name: CELERY_BROKER_URL
-              value: "redis://superset-redis:6379/0"
-            - name: CELERY_RESULT_BACKEND
-              value: "redis://superset-redis:6379/1"
-          ports:
-            - containerPort: 8088
-          readinessProbe:
-            httpGet: { path: /health, port: 8088 }
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          livenessProbe:
-            httpGet: { path: /health, port: 8088 }
-            initialDelaySeconds: 60
-            periodSeconds: 20
+            - secretRef:   { name: superset-secrets }
+          volumeMounts:
+            - name: superset-home
+              mountPath: /app/superset_home
           command: ["/bin/sh","-c"]
           args:
             - |
               set -eu
-              pip install --no-cache-dir "psycopg2-binary>=2.9"
-              export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
+              # Initialize/upgrade metadata DB (creates SQLite file if missing)
+              superset db upgrade
+              # Create admin (idempotent) and perform base init
+              superset fab create-admin \
+                --username "${SUPERSET_ADMIN_USERNAME}" \
+                --firstname "${SUPERSET_ADMIN_FIRSTNAME}" \
+                --lastname "${SUPERSET_ADMIN_LASTNAME}" \
+                --email "${SUPERSET_ADMIN_EMAIL}" \
+                --password "${SUPERSET_ADMIN_PASSWORD}" || true
+              superset init
+      containers:
+        - name: web
+          image: apache/superset:5.0.0
+          envFrom:
+            - configMapRef: { name: superset-env }
+            - secretRef:   { name: superset-secrets }
+          volumeMounts:
+            - name: superset-home
+              mountPath: /app/superset_home
+          ports:
+            - containerPort: 8088
+          readinessProbe:
+            httpGet: { path: /health, port: 8088 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8088 }
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          # No DB drivers needed for SQLite; keep entrypoint simple
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
               exec gunicorn --bind 0.0.0.0:8088 --workers 3 --timeout 120 "superset.app:create_app()"
           resources:
             requests:
@@ -257,102 +122,7 @@ spec:
               cpu: "1500m"
               memory: "2Gi"
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: superset-worker
-  namespace: superset
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: superset-worker
-  template:
-    metadata:
-      labels:
-        app: superset-worker
-    spec:
-      containers:
-        - name: worker
-          image: "apache/superset:5.0.0"
-          envFrom:
-            - configMapRef: { name: superset-env }
-            - secretRef: { name: superset-secrets }
-          env:
-            - name: CELERY_BROKER_URL
-              value: "redis://superset-redis:6379/0"
-            - name: CELERY_RESULT_BACKEND
-              value: "redis://superset-redis:6379/1"
-          command: ["/bin/sh","-c"]
-          args:
-            - |
-              set -eu
-              pip install --no-cache-dir "psycopg2-binary>=2.9"
-              export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
-              exec celery --app superset.tasks.celery_app:app worker --pool prefork -O fair -l INFO
-          readinessProbe:
-            exec: { command: ["bash","-lc","python - <<'PY'\nfrom celery import Celery\nprint(Celery(broker='redis://superset-redis:6379/0').control.ping(timeout=2))\nPY"] }
-            initialDelaySeconds: 25
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: "200m"
-              memory: "512Mi"
-            limits:
-              cpu: "1000m"
-              memory: "2Gi"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: superset-beat
-  namespace: superset
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: superset-beat
-  template:
-    metadata:
-      labels:
-        app: superset-beat
-    spec:
-      containers:
-        - name: beat
-          image: "apache/superset:5.0.0"
-          envFrom:
-            - configMapRef: { name: superset-env }
-            - secretRef: { name: superset-secrets }
-          env:
-            - name: CELERY_BROKER_URL
-              value: "redis://superset-redis:6379/0"
-            - name: CELERY_RESULT_BACKEND
-              value: "redis://superset-redis:6379/1"
-          command: ["/bin/sh","-c"]
-          args:
-            - |
-              set -eu
-              pip install --no-cache-dir "psycopg2-binary>=2.9"
-              export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
-              exec celery --app superset.tasks.celery_app:app beat -l INFO \
-                --schedule /tmp/celerybeat-schedule \
-                --pidfile  /tmp/celerybeat.pid
-          readinessProbe:
-            exec: { command: ["bash","-lc","echo ok"] }
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
----
+# Ingress (Traefik example — adjust host/annotations to your setup)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -363,7 +133,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: superset.pasuko.com   # change if needed
+    - host: superset.pasuko.com   # <-- change if needed
       http:
         paths:
           - path: /
