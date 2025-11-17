@@ -11,18 +11,18 @@ data:
           http: {}
 
     processors:
-      # This will try to parse the body as JSON.
-      # If it fails, it will be ignored and the body remains a string.
-      json_parser:
-        error_mode: ignore
-
-      # This will now only run its statements on logs
-      # where the body was successfully parsed into a map.
+      # This is the correct way
       transform/traefik:
         error_mode: ignore
         log_statements:
           - context: log
             statements:
+              # On a modern image, 'matches' exists and works.
+              # This parses the body ONLY if it's a string AND looks like a JSON object.
+              - set(body, ParseJSON(body)) where IsString(body) and body matches "^{.*}$"
+
+              # These statements will now only run if the body was 
+              # successfully parsed into a map.
               - set(attributes["http.method"], body["RequestMethod"]) where IsMap(body)
               - set(attributes["http.target"], body["RequestPath"]) where IsMap(body)
               - set(attributes["http.status_code"], Int(body["DownstreamStatus"])) where IsMap(body)
@@ -40,17 +40,17 @@ data:
       otlphttp:
         endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
         headers:
-          # Fixes the 401 Unauthenticated error
+          # This fixes your 401 Unauthenticated error
           X-Scope-OrgID: fake-org
 
-      # For debugging: prints processed logs to the collector's stdout
-      logging: {}
+      # Use 'debug' for modern collectors
+      debug:
+        verbosity: detailed
 
     service:
       pipelines:
         logs:
           receivers: [otlp]
-          # The order is important: parse first, then transform
-          processors: [json_parser, transform/traefik, batch]
-          # Send to Loki
-          exporters: [otlphttp]
+          # This is the correct, simple pipeline
+          processors: [transform/traefik, batch]
+          exporters: [otlphttp, debug]
