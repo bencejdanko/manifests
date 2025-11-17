@@ -495,7 +495,7 @@ spec:
         name: wait-for-postgres-redis
       containers:
         - name: superset
-          image: "apache/superset:5.0.0"
+          image: "apache/superset:5.0.0-debian-python3.10"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","-c",". /app/pythonpath/superset_bootstrap.sh; celery --app=superset.tasks.celery_app:app worker"]
           env:
@@ -575,7 +575,7 @@ spec:
         name: wait-for-postgres
       containers:
         - name: superset
-          image: "apache/superset:5.0.0"
+          image: "apache/superset:5.0.0-debian-python3.10"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","-c",". /app/pythonpath/superset_bootstrap.sh; /usr/bin/run-server.sh"]
           env:
@@ -952,16 +952,16 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: map[host:superset.pasuko.com paths:[map[path:/ pathType:Prefix]]]
+    - host: superset.pasuko.com 
       http:
         paths:
           - path: /
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
-                name: superset-local
-                port:
-                  name: http
+              name: superset-local
+              port:
+                name: http
 ---
 # Source: superset-local/charts/superset/templates/init-job.yaml
 apiVersion: batch/v1
@@ -997,7 +997,7 @@ spec:
         name: wait-for-postgres
       containers:
       - name: superset-init-db
-        image: "apache/superset:5.0.0"
+        image: "apache/superset:5.0.0-debian-python3.10"
         envFrom:
           - secretRef:
               name: superset-local-env
