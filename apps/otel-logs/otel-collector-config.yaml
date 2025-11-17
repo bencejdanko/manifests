@@ -8,7 +8,8 @@ data:
     receivers:
       otlp:
         protocols:
-          http: {}
+          http:
+            endpoint: 0.0.0.0:4318
 
     processors:
       transform/traefik:
@@ -16,21 +17,17 @@ data:
         log_statements:
           - context: log
             statements:
-              # This pattern is from the official documentation.
-              # 1. Parse the log body as JSON *into* the cache,
-              #    but only if it's a string and matches a JSON pattern.
-              - merge_maps(cache, ParseJSON(body), "upsert") where IsString(body) and IsMatch(body, "^{.*}$")
+              - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsString(log.body) and IsMatch(log.body, "^{.*}$")
 
-              # 2. Set attributes from the cache. This only runs
-              #    if the cache (and the specific key) exists.
-              - set(attributes["http.method"], cache["RequestMethod"]) where cache["RequestMethod"] != nil
-              - set(attributes["http.target"], cache["RequestPath"]) where cache["RequestPath"] != nil
-              - set(attributes["http.status_code"], Int(cache["DownstreamStatus"])) where cache["DownstreamStatus"] != nil
-              - set(attributes["net.host.name"], cache["RequestHost"]) where cache["RequestHost"] != nil
-              - set(attributes["traefik.entrypoint"], cache["entryPointName"]) where cache["entryPointName"] != nil
-              - set(attributes["traefik.router"], cache["RouterName"]) where cache["RouterName"] != nil
-              - set(attributes["traefik.service"], cache["ServiceName"]) where cache["ServiceName"] != nil
-              - set(attributes["duration.ns"], Int(cache["Duration"])) where cache["Duration"] != nil
+              # Set attributes from the cache
+              - set(log.attributes["http.method"], log.cache["RequestMethod"]) where log.cache["RequestMethod"] != nil
+              - set(log.attributes["http.target"], log.cache["RequestPath"]) where log.cache["RequestPath"] != nil
+              - set(log.attributes["http.status_code"], Int(log.cache["DownstreamStatus"])) where log.cache["DownstreamStatus"] != nil
+              - set(log.attributes["net.host.name"], log.cache["RequestHost"]) where log.cache["RequestHost"] != nil
+              - set(log.attributes["traefik.entrypoint"], log.cache["entryPointName"]) where log.cache["entryPointName"] != nil
+              - set(log.attributes["traefik.router"], log.cache["RouterName"]) where log.cache["RouterName"] != nil
+              - set(log.attributes["traefik.service"], log.cache["ServiceName"]) where log.cache["ServiceName"] != nil
+              - set(log.attributes["duration.ns"], Int(log.cache["Duration"])) where log.cache["Duration"] != nil
 
       batch:
         send_batch_size: 4096
@@ -43,7 +40,8 @@ data:
           # Fixes the 401 Unauthenticated error
           X-Scope-OrgID: fake-org
 
-      # Use 'debug' for modern collectors
+      # The debug exporter will now print logs to the
+      # console once the receiver fix (FIX 1) is applied.
       debug:
         verbosity: detailed
 
