@@ -13,7 +13,7 @@ spec:
       metrics:
         port: 9100
         expose:
-          default: false 
+          default: false
         protocol: TCP
 
     serviceMonitor:
@@ -22,7 +22,20 @@ spec:
       additionalLabels:
         release: kube-prometheus-stack
 
-    logs:
-      access:
-        enabled: true
-        format: json
+    # --- LOGS: enable OpenTelemetry (experimental in Traefik) ---
+    experimental:
+      otlpLogs: true
+
+    # Traefik process logs -> OTLP over HTTP to collector
+    log:
+      format: json
+      otlp:
+        http:
+          endpoint: http://otel-collector.monitoring.svc.cluster.local:4318/v1/logs
+
+    # Traefik access logs -> OTLP over HTTP to collector
+    accesslog:
+      format: json
+      otlp:
+        http:
+          endpoint: http://otel-collector.monitoring.svc.cluster.local:4318/v1/logs
