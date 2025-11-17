@@ -8,31 +8,33 @@ data:
     receivers:
       otlp:
         protocols:
-          http:  # listens on :4318 by default
+          http: {}   # listens on 0.0.0.0:4318
 
     processors:
-      # optional: parse Traefik JSON body and promote a few fields to attributes
       transform/traefik:
         error_mode: ignore
         log_statements:
           - context: log
             statements:
+              # If the body is a JSON string, parse it into a map
               - set(body, ParseJSON(body)) where IsString(body)
-              - set(attributes["http.method"], body.RequestMethod) where IsMap(body)
-              - set(attributes["http.target"], body.RequestPath) where IsMap(body)
-              - set(attributes["http.status_code"], ToInt(body.DownstreamStatus)) where IsMap(body)
-              - set(attributes["net.host.name"], body.RequestHost) where IsMap(body)
-              - set(attributes["traefik.entrypoint"], body.entryPointName) where IsMap(body)
-              - set(attributes["traefik.router"], body.RouterName) where IsMap(body)
-              - set(attributes["traefik.service"], body.ServiceName) where IsMap(body)
-              - set(attributes["duration.ns"], ToInt(body.Duration)) where IsMap(body)
+
+              # Promote selected fields to attributes (use bracket syntax; cast numbers)
+              - set(attributes["http.method"], body["RequestMethod"]) where IsMap(body)
+              - set(attributes["http.target"], body["RequestPath"]) where IsMap(body)
+              - set(attributes["http.status_code"], Int(body["DownstreamStatus"])) where IsMap(body)
+              - set(attributes["net.host.name"], body["RequestHost"]) where IsMap(body)
+              - set(attributes["traefik.entrypoint"], body["entryPointName"]) where IsMap(body)
+              - set(attributes["traefik.router"], body["RouterName"]) where IsMap(body)
+              - set(attributes["traefik.service"], body["ServiceName"]) where IsMap(body)
+              - set(attributes["duration.ns"], Int(body["Duration"])) where IsMap(body)
 
       batch:
         send_batch_size: 4096
         timeout: 5s
 
     exporters:
-      # >>> send to Loki's native OTLP endpoint (no custom labels block here)
+      # Send to Loki's native OTLP endpoint (no custom loki exporter block)
       otlphttp:
         endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
 
