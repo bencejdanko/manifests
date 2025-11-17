@@ -27,7 +27,7 @@ superset:
   postgresql:
     enabled: true
     image: 
-      repository: registry.vmware.com/bitnami/postgresql
+      repository: bitnamilegacy/postgresql
     
     auth:
       existingSecret: "superset-secrets"
@@ -37,7 +37,7 @@ superset:
   redis:
     enabled: true
     image:
-      repository: registry.vmware.com/bitnami/redis
+      repository: bitnamilegacy/redis
 
   bootstrapScript: |
     #!/bin/bash
