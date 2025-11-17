@@ -26,6 +26,10 @@ data:
               - set(log.attributes["traefik.router"], log.cache["RouterName"]) where log.cache["RouterName"] != nil
               - set(log.attributes["traefik.service"], log.cache["ServiceName"]) where log.cache["ServiceName"] != nil
               - set(log.attributes["duration.ns"], Int(log.cache["Duration"])) where log.cache["Duration"] != nil
+              
+              - set(log.attributes["client.host"], log.cache["ClientHost"]) where log.cache["ClientHost"] != nil
+              - set(log.attributes["http.user_agent"], log.cache["UserAgent"]) where log.cache["UserAgent"] != nil
+
       batch:
         send_batch_size: 4096
         timeout: 5s
