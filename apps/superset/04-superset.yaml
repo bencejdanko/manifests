@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: superset-init
-          image: apache/superset:4.0.0
+          image: apache/superset:5.0.0-dev
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: superset-web
-          image: apache/superset:4.0.0
+          image: apache/superset:5.0.0-dev
           command: ["gunicorn"]
           args:
             - "-w"
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: superset-worker
-          image: apache/superset:4.0.0
+          image: apache/superset:5.0.0-dev
           command: ["celery", "worker", "--app=superset.tasks.celery_app:app"]
           envFrom:
             - secretRef:
@@ -115,7 +115,7 @@ spec:
     spec:
       containers:
         - name: superset-beat
-          image: apache/superset:4.0.0
+          image: apache/superset:5.0.0-dev
           command: ["celery", "beat", "--app=superset.tasks.celery_app:app"]
           envFrom:
             - secretRef:
