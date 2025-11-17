@@ -18,6 +18,9 @@ spec:
           image: grafana/promtail:2.9.3
           args:
             - -config.file=/etc/promtail/promtail.yaml
+          ports:
+            - name: http-metrics
+              containerPort: 9080
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
@@ -29,7 +32,6 @@ spec:
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
-            # If using containerd (k3s default), this path is enough; still mounting /var/log covers /var/log/containers symlinks.
           resources:
             requests:
               cpu: 50m

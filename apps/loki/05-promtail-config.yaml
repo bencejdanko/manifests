@@ -16,67 +16,40 @@ data:
       filename: /run/promtail/positions.yaml
 
     scrape_configs:
-
-      - job_name: traefik-static
-        pipeline_stages:
-          - cri: {}
-          - json:
-              expressions:
-                request_method: RequestMethod
-                request_path: RequestPath
-                downstream_status: DownstreamStatus
-                duration_ns: Duration
-                request_host: RequestHost
-        static_configs:
-          - targets: [localhost]
-            labels:
-              job: traefik
-              namespace: kube-system
-              pod: traefik
-              container: traefik
-              __path__: /var/log/pods/kube-system_traefik-*/traefik/*.log
-
+      # Traefik access logs from kube-system
       - job_name: kubernetes-traefik-stdout
         pipeline_stages:
-          - cri: {}   # unwrap CRI header from /var/log/pods/.../*.log
+          - cri: {}  # unwrap CRI header from /var/log/pods/.../*.log
           - json:
               expressions:
-                # From your sample line:
-                client_addr: ClientAddr
-                client_host: ClientHost
-                client_port: ClientPort
-                downstream_status: DownstreamStatus
-                downstream_size: DownstreamContentSize
-                duration_ns: Duration
-                origin_status: OriginStatus
-                origin_size: OriginContentSize
-                origin_duration_ns: OriginDuration
-                overhead_ns: Overhead
-                request_host: RequestHost
+                # Map Traefik's PascalCase fields → lowercase labels/fields
                 request_method: RequestMethod
                 request_path: RequestPath
-                request_addr: RequestAddr
-                request_count: RequestCount
-                request_bytes: RequestContentSize
-          # Keep only low-cardinality labels; avoid host/path/user-agent
+                downstream_status: DownstreamStatus
+                duration_ns: Duration
+                request_host: RequestHost
+                entrypoint: entryPointName
+                level: level
+          # Keep low-cardinality labels only
           - labels:
               request_method:
               downstream_status:
+              entrypoint:
         kubernetes_sd_configs:
           - role: pod
         relabel_configs:
-          # Only kube-system
+          # 1) namespace must be kube-system
           - source_labels: [__meta_kubernetes_namespace]
             regex: kube-system
             action: keep
-          # Prefer the standard label; also allow pod-name match as a fallback
-          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
-            regex: traefik
+
+          # 2) keep if (label == traefik) OR (pod name starts with traefik-)
+          #    Use a two-column OR: (label;podname) matches ("traefik";*) OR (*;"traefik-...")
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name, __meta_kubernetes_pod_name]
+            regex: (traefik;.*|.*;traefik-.*)
             action: keep
-          - source_labels: [__meta_kubernetes_pod_name]
-            regex: traefik.*
-            action: keep
-          # Useful meta
+
+          # 3) helpful meta labels
           - action: replace
             source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
@@ -88,8 +61,9 @@ data:
             target_label: container
           - target_label: job
             replacement: traefik
-          # Tell Promtail which files to read (works on k3s/containerd)
+
+          # 4) critical: map pod UID + container → CRI log filepath
+          #    /var/log/pods/<ns>_<pod>_<UID>/<container>/*.log
           - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
             target_label: __path__
             replacement: /var/log/pods/*$1*/$2/*.log
-      
