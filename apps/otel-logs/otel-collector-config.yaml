@@ -29,6 +29,7 @@ data:
               
               - set(log.attributes["client.host"], log.cache["ClientHost"]) where log.cache["ClientHost"] != nil
               - set(log.attributes["http.user_agent"], log.cache["UserAgent"]) where log.cache["UserAgent"] != nil
+              - set(log.attributes["http.origin.status_code"], Int(log.cache["OriginStatus"])) where log.cache["OriginStatus"] != nil
 
       batch:
         send_batch_size: 4096
