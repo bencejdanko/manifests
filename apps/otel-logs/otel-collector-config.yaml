@@ -18,8 +18,6 @@ data:
           - context: log
             statements:
               - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsString(log.body) and IsMatch(log.body, "^{.*}$")
-
-              # Set attributes from the cache
               - set(log.attributes["http.method"], log.cache["RequestMethod"]) where log.cache["RequestMethod"] != nil
               - set(log.attributes["http.target"], log.cache["RequestPath"]) where log.cache["RequestPath"] != nil
               - set(log.attributes["http.status_code"], Int(log.cache["DownstreamStatus"])) where log.cache["DownstreamStatus"] != nil
@@ -28,19 +26,16 @@ data:
               - set(log.attributes["traefik.router"], log.cache["RouterName"]) where log.cache["RouterName"] != nil
               - set(log.attributes["traefik.service"], log.cache["ServiceName"]) where log.cache["ServiceName"] != nil
               - set(log.attributes["duration.ns"], Int(log.cache["Duration"])) where log.cache["Duration"] != nil
-
       batch:
         send_batch_size: 4096
         timeout: 5s
 
     exporters:
-      loki:
-        endpoint: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+      otlphttp:
+        endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
         headers:
           X-Scope-OrgID: fake-org
 
-      # The debug exporter will now print logs to the
-      # console once the receiver fix (FIX 1) is applied.
       debug:
         verbosity: detailed
 
@@ -49,4 +44,5 @@ data:
         logs:
           receivers: [otlp]
           processors: [transform/traefik, batch]
+          # REVERT TO THIS:
           exporters: [otlphttp, debug]

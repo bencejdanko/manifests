@@ -8,6 +8,10 @@ data:
     server:
       http_listen_port: 3100
 
+    distributor:
+      otlp:
+        enabled: true
+
     common:
       path_prefix: /var/loki
       storage:
@@ -22,7 +26,6 @@ data:
 
     schema_config:
       configs:
-        # use a from: date in the (recent) past so new data uses TSDB
         - from: 2025-11-01
           store: tsdb
           object_store: filesystem
@@ -31,7 +34,6 @@ data:
             prefix: index_
             period: 24h
 
-    # NOTE: no boltdb_shipper here when using TSDB
     storage_config: {}
 
     limits_config:
