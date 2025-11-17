@@ -37,8 +37,8 @@ data:
       # Send to Loki's native OTLP endpoint (no custom loki exporter block)
       otlphttp:
         endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
-      headers:
-        X-Scope-OrgID: fake-org
+        headers:
+          X-Scope-OrgID: fake-org
 
     service:
       pipelines:
