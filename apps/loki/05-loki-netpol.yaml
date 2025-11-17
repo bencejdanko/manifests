@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-to-loki
+  namespace: monitoring
+spec:
+  # Apply this policy to the Loki pod
+  podSelector:
+    matchLabels:
+      app: loki
+
+  # Allow ingress traffic
+  policyTypes:
+  - Ingress
+
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          # IMPORTANT: Change this value to your Grafana namespace
+          kubernetes.io/metadata.name: monitoring
+    ports:
+    - protocol: TCP
+      port: 3100 # Allow traffic only on the Loki port
