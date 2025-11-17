@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse-web
+  namespace: langfuse
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: langfuse-web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-web
+  namespace: langfuse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-web
+  template:
+    metadata:
+      labels:
+        app: langfuse-web
+    spec:
+      containers:
+        - name: langfuse-web
+          # Pin to a specific recent version
+          image: langfuse/langfuse:2.30.0 
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: NEXT_PUBLIC_BASE_PATH
+              value: ""
+            - name: TELEMETRY_ENABLED
+              value: "false"
+          # Load all credentials from the secret
+          envFrom:
+            - secretRef:
+                name: langfuse-secrets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-worker
+  namespace: langfuse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse-worker
+  template:
+    metadata:
+      labels:
+        app: langfuse-worker
+    spec:
+      containers:
+        - name: langfuse-worker
+          image: langfuse/langfuse:3.132.0
+          imagePullPolicy: IfNotPresent
+          # This command starts the worker instead of the web server
+          command: ["node", "worker.js"]
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: TELEMETRY_ENABLED
+              value: "false"
+          # Load all credentials from the secret
+          envFrom:
+            - secretRef:
+                name: langfuse-secrets
