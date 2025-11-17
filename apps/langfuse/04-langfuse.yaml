@@ -61,10 +61,10 @@ spec:
     spec:
       containers:
         - name: langfuse-worker
-          image: langfuse/langfuse:3.132.0
+          image: langfuse/langfuse-worker:3.132.0
           imagePullPolicy: IfNotPresent
           # This command starts the worker instead of the web server
-          command: ["node", "server.js", "worker"]
+
           env:
             - name: NODE_ENV
               value: "production"
