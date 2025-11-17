@@ -64,7 +64,7 @@ spec:
           image: langfuse/langfuse:3.132.0
           imagePullPolicy: IfNotPresent
           # This command starts the worker instead of the web server
-          command: ["node", "worker.js"]
+          command: ["node", "server.js", "worker"]
           env:
             - name: NODE_ENV
               value: "production"
