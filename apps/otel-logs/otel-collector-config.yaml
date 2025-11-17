@@ -17,8 +17,8 @@ data:
           - context: log
             statements:
               # If the body is a JSON string, parse it into a map
-              - set(body, ParseJSON(body)) where IsString(body)
-
+              - set(body, ParseJSON(body)) where IsString(body) and body matches "^{.*}$"
+              
               # Promote selected fields to attributes (use bracket syntax; cast numbers)
               - set(attributes["http.method"], body["RequestMethod"]) where IsMap(body)
               - set(attributes["http.target"], body["RequestPath"]) where IsMap(body)
@@ -37,6 +37,8 @@ data:
       # Send to Loki's native OTLP endpoint (no custom loki exporter block)
       otlphttp:
         endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
+      headers:
+        X-Scope-OrgID: fake-org
 
     service:
       pipelines:
