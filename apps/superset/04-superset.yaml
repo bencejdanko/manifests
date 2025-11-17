@@ -1,0 +1,143 @@
+# This job runs ONCE to initialize the database and create the admin user
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: superset-init
+  namespace: superset
+spec:
+  template:
+    spec:
+      containers:
+        - name: superset-init
+          image: apache/superset:4.0.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Upgrading database..."
+              superset db upgrade
+              echo "Initializing..."
+              superset init
+          envFrom:
+            - secretRef:
+                name: superset-secrets
+      restartPolicy: Never
+  backoffLimit: 4
+---
+# The Web UI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset-web
+  namespace: superset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: superset-web
+  template:
+    metadata:
+      labels:
+        app: superset-web
+    spec:
+      containers:
+        - name: superset-web
+          image: apache/superset:4.0.0
+          command: ["gunicorn"]
+          args:
+            - "-w"
+            - "10"
+            - "-k"
+            - "gevent"
+            - "--timeout"
+            - "120"
+            - "-b"
+            - "0.0.0.0:8088"
+            - "superset.app:create_app()"
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - secretRef:
+                name: superset-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/
+      volumes:
+        - name: config-volume
+          configMap:
+            name: superset-config
+---
+# The Celery Worker (for running queries)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset-worker
+  namespace: superset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: superset-worker
+  template:
+    metadata:
+      labels:
+        app: superset-worker
+    spec:
+      containers:
+        - name: superset-worker
+          image: apache/superset:4.0.0
+          command: ["celery", "worker", "--app=superset.tasks.celery_app:app"]
+          envFrom:
+            - secretRef:
+                name: superset-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/
+      volumes:
+        - name: config-volume
+          configMap:
+            name: superset-config
+---
+# The Celery Beat (scheduler)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset-beat
+  namespace: superset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: superset-beat
+  template:
+    metadata:
+      labels:
+        app: superset-beat
+    spec:
+      containers:
+        - name: superset-beat
+          image: apache/superset:4.0.0
+          command: ["celery", "beat", "--app=superset.tasks.celery_app:app"]
+          envFrom:
+            - secretRef:
+                name: superset-secrets
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/
+      volumes:
+        - name: config-volume
+          configMap:
+            name: superset-config
+---
+# Service to expose the Web UI
+apiVersion: v1
+kind: Service
+metadata:
+  name: superset-web
+  namespace: superset
+spec:
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
+  selector:
+    app: superset-web
