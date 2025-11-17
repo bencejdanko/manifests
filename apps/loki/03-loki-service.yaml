@@ -4,7 +4,7 @@ metadata:
   name: loki
   namespace: monitoring
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: loki
   ports:
