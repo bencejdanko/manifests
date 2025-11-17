@@ -31,13 +31,8 @@ postgresql:
     secretKeys:
       passwordKey: "SUPERSET_POSTGRES_PASSWORD"
 
-  image:
-    repository: "bitnamilegacy/postgresql"
-
 redis:
   enabled: true
-  image:
-    repository: "bitnamilegacy/redis"
 
 bootstrapScript: |
   #!/bin/bash
