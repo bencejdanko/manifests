@@ -33,6 +33,7 @@ superset:
       existingSecret: "superset-secrets"
       secretKeys:
         passwordKey: "SUPERSET_POSTGRES_PASSWORD"
+        userPasswordKey: "SUPERSET_POSTGRES_PASSWORD"
 
   redis:
     enabled: true
