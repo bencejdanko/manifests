@@ -338,7 +338,9 @@ spec:
               set -eu
               pip install --no-cache-dir "psycopg2-binary>=2.9"
               export SUPERSET_DATABASE_URI="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@superset-postgresql:5432/${POSTGRES_DB}"
-              exec celery --app superset.tasks.celery_app:app beat -l INFO
+              exec celery --app superset.tasks.celery_app:app beat -l INFO \
+                --schedule /tmp/celerybeat-schedule \
+                --pidfile  /tmp/celerybeat.pid
           readinessProbe:
             exec: { command: ["bash","-lc","echo ok"] }
             initialDelaySeconds: 10
