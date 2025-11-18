@@ -1,49 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mcpgateway
+  name: mcpgateway-core
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: oci://ghcr.io/ibm/mcp-context-forge/mcp-stack
-    chart: mcp-stack
-    targetRevision: "0.1.1"     # pin a concrete version; update when IBM bumps it
-    helm:
-      values: |
-        image:
-          repository: ghcr.io/ibm/mcp-context-forge
-          tag: "1763384443"          # app image tag (pin it)
-          pullPolicy: IfNotPresent
-
-        gateway:
-          replicaCount: 2
-          env:
-            HOST: "0.0.0.0"
-            PORT: "4444"
-            ENVIRONMENT: "production"
-            AUTH_REQUIRED: "true"
-            MCPGATEWAY_UI_ENABLED: "true"
-            MCPGATEWAY_ADMIN_API_ENABLED: "true"
-            CACHE_TYPE: "redis"
-            REDIS_URL: "redis://redis.mcp.svc.cluster.local:6379/0"
-            JWT_ALGORITHM: "RS256"
-            JWT_PUBLIC_KEY_PATH: "/etc/jwt/public.pem"
-            JWT_PRIVATE_KEY_PATH: "/etc/jwt/private.pem"
-          extraVolumeMounts:
-            - name: jwt-keys
-              mountPath: /etc/jwt
-              readOnly: true
-          extraVolumes:
-            - name: jwt-keys
-              secret:
-                secretName: jwt-keys
-
-        ingress:
-          enabled: false  # we'll supply our own Traefik Ingresses below
-
-        redis:
-          enabled: true   # or false if you use your own/managed Redis
-
-        postgresql:
-          enabled: true  # disable if you point to your own DB
+    repoURL: https://github.com/bencejdanko/manifests.git
+    targetRevision: main
+    path: apps/mcp/core
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mcp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

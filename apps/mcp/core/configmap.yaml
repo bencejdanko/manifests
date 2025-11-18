@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcpgateway-env
+  namespace: mcp
+data:
+  HOST: "0.0.0.0"
+  PORT: "4444"
+  ENVIRONMENT: "production"
+  AUTH_REQUIRED: "true"
+  MCPGATEWAY_UI_ENABLED: "true"
+  MCPGATEWAY_ADMIN_API_ENABLED: "true"
+  CACHE_TYPE: "redis"
+  REDIS_URL: "redis://redis.mcp.svc.cluster.local:6379/0"
+  JWT_ALGORITHM: "RS256"
+  JWT_PUBLIC_KEY_PATH: "/etc/jwt/public.pem"
+  JWT_PRIVATE_KEY_PATH: "/etc/jwt/private.pem"
