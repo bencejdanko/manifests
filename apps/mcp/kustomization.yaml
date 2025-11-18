@@ -7,3 +7,4 @@ resources:
   - core/service.yaml
   - core/redis.yaml
   - core/ingress.yaml
+  - core/postgres.yaml
