@@ -13,14 +13,24 @@ spec:
       labels:
         app: langflow
     spec:
+      # Pod-level security context: makes the mounted volume group-writable/readable
       securityContext:
-        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: langflow
           image: langflowai/langflow:1.6.8
           imagePullPolicy: Always
+          # Container security context: tells kube we're running as non-root (numeric)
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+
           ports:
             - containerPort: 7860
+
           env:
             - name: LANGFLOW_DATABASE_URL
               valueFrom:
@@ -29,24 +39,34 @@ spec:
                   key: url
             - name: LANGFLOW_CONFIG_DIR
               value: /app/langflow
+
           envFrom:
             - secretRef:
                 name: langflow-auth
+
           volumeMounts:
             - name: data
               mountPath: /app/langflow
+
           readinessProbe:
-            httpGet: { path: /, port: 7860 }
+            httpGet:
+              path: /
+              port: 7860
             initialDelaySeconds: 10
             periodSeconds: 10
+
           livenessProbe:
-            httpGet: { path: /, port: 7860 }
+            httpGet:
+              path: /
+              port: 7860
             initialDelaySeconds: 20
             periodSeconds: 20
+
           resources:
             requests:
               cpu: "500m"
               memory: "1Gi"
+
       volumes:
         - name: data
           persistentVolumeClaim:
