@@ -13,6 +13,8 @@ spec:
       labels:
         app: mcpgateway
     spec:
+      nodeSelector:
+        cpu.x86_64_v3: "true"
       containers:
         - name: mcpgateway
           image: ghcr.io/ibm/mcp-context-forge:1763384443
