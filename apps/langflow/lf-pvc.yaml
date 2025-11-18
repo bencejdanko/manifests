@@ -4,6 +4,7 @@ metadata:
   name: langflow-data
   namespace: langflow
 spec:
+  storageClassName: local-path
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:

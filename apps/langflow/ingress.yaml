@@ -5,7 +5,8 @@ metadata:
   namespace: langflow
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.middlewares: langflow-langflow-block-signup@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: langflow-block-signup@kubernetescrd
+
 
 spec:
   ingressClassName: traefik
