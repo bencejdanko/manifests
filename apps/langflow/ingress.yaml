@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   name: langflow
   namespace: langflow
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: langflow-langflow-block-signup@kubernetescrd
+
 spec:
   rules:
     - host: langflow.pasuko.com
