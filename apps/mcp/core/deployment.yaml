@@ -23,6 +23,7 @@ spec:
           envFrom:
             - configMapRef: { name: mcpgateway-env }
             - secretRef:    { name: mcpgateway-secrets }
+            - secretRef:  { name: mcpgateway-seed-admin }
           volumeMounts:
             - name: jwt-keys
               mountPath: /etc/jwt
