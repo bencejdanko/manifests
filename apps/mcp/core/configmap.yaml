@@ -15,3 +15,4 @@ data:
   JWT_ALGORITHM: "RS256"
   JWT_PUBLIC_KEY_PATH: "/etc/jwt/public.pem"
   JWT_PRIVATE_KEY_PATH: "/etc/jwt/private.pem"
+  DATABASE_URL: "postgresql+psycopg2://postgres:postgres@postgres.mcp.svc.cluster.local:5432/mcp"
