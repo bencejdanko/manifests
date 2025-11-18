@@ -13,15 +13,28 @@ spec:
       labels:
         app: langflow
     spec:
-      # Pod-level security context: makes the mounted volume group-writable/readable
+      # Make the mounted volume group-accessible; keeps non-root security
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+
+      # 1) Fix permissions on the PVC before app starts (runs once, as root)
+      initContainers:
+        - name: fix-perms
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 1000:1000 /app/langflow || true"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /app/langflow
+
       containers:
         - name: langflow
           image: langflowai/langflow:1.6.8
           imagePullPolicy: Always
-          # Container security context: tells kube we're running as non-root (numeric)
+
+          # Keep non-root, numeric IDs
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -48,19 +61,33 @@ spec:
             - name: data
               mountPath: /app/langflow
 
-          readinessProbe:
+          # 2) Probes tuned so the app has time to boot/migrate DB
+          # Give Langflow up to ~5 minutes to start before liveness/readiness matter
+          startupProbe:
             httpGet:
               path: /
               port: 7860
             initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 60   # 60 * 5s = 5 minutes
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7860
+            initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
 
           livenessProbe:
             httpGet:
               path: /
               port: 7860
-            initialDelaySeconds: 20
+            initialDelaySeconds: 60
             periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
 
           resources:
             requests:
