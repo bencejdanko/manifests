@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: langflow
+  namespace: langflow
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: langflow-langflow-block-signup@kubernetescrd
+
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: langflow.pasuko.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: langflow
+                port:
+                  number: 7860

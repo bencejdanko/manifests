@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langflow
+  namespace: langflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langflow
+  template:
+    metadata:
+      labels:
+        app: langflow
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: langflow
+          image: langflowai/langflow:1.6.8
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7860
+          env:
+            - name: LANGFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: langflow-db
+                  key: url
+            - name: LANGFLOW_CONFIG_DIR
+              value: /app/langflow
+          envFrom:
+            - secretRef:
+                name: langflow-auth
+          volumeMounts:
+            - name: data
+              mountPath: /app/langflow
+          readinessProbe:
+            httpGet: { path: /, port: 7860 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: 7860 }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: langflow-data

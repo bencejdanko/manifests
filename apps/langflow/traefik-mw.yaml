@@ -1,0 +1,10 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: langflow-block-signup
+  namespace: langflow
+spec:
+  redirectRegex:
+    regex: ^/signup.*$
+    replacement: /login
+    permanent: true
