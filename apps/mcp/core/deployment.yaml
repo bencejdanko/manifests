@@ -4,7 +4,7 @@ metadata:
   name: mcpgateway
   namespace: mcp
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: mcpgateway
@@ -21,8 +21,8 @@ spec:
             - name: http
               containerPort: 4444
           envFrom:
-            - configMapRef:
-                name: mcpgateway-env
+            - configMapRef: { name: mcpgateway-env }
+            - secretRef:    { name: mcpgateway-secrets }
           volumeMounts:
             - name: jwt-keys
               mountPath: /etc/jwt

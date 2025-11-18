@@ -6,8 +6,4 @@ resources:
   - core/deployment.yaml
   - core/service.yaml
   - core/redis.yaml
-  - core/postgres-service.yaml
-  - core/postgres-statefulset.yaml
-  - extras/admin-mw.yaml
-  - extras/admin-ingress.yaml
-  - extras/ingress.yaml
+  - core/ingress.yaml
