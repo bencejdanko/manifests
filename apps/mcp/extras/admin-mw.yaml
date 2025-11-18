@@ -1,0 +1,12 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: mcp-admin-vpn-allow
+  namespace: mcp
+spec:
+  ipWhiteList:
+    sourceRange:
+      - 100.64.0.0/10    # if using Tailscale
+      # Add your VPN subnet(s) here — for example:
+      # - 100.64.0.0/10    # if using Tailscale
+      # - 10.8.0.0/24      # if using WireGuard
