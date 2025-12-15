@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crawl4ai
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bencejdanko/manifests.git
+    targetRevision: main
+    path: apps/crawl4ai
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crawl4ai
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
